@@ -2,15 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>DuST Alliance Map</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; display: flex; height: 100vh; overflow: hidden; }
+  body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; display: flex; height: 100vh; height: 100dvh; overflow: hidden; }
 
   /* Sidebar */
   .sidebar { width: 260px; min-width: 260px; background: #16213e; overflow-y: auto; border-right: 2px solid #0f3460; display: flex; flex-direction: column; }
-  .sidebar-header { padding: 16px; text-align: center; background: #0f3460; font-size: 18px; font-weight: bold; letter-spacing: 1px; position: sticky; top: 0; z-index: 2; }
+  .sidebar-header { padding: 14px; text-align: center; background: #0f3460; font-size: 18px; font-weight: bold; letter-spacing: 1px; position: sticky; top: 0; z-index: 2; }
   .rank-group { margin-bottom: 2px; }
   .rank-label { padding: 8px 14px; font-size: 13px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; position: sticky; top: 52px; z-index: 1; cursor: default; display: flex; justify-content: space-between; align-items: center; }
   .rank-label .count { font-weight: normal; font-size: 11px; opacity: 0.7; }
@@ -20,27 +20,27 @@
   .rank-r2 { background: #27ae60; color: #fff; }
   .rank-r1 { background: #8e44ad; color: #fff; }
   .rank-npc { background: #7f8c8d; color: #fff; }
-  .name-item { padding: 7px 14px 7px 20px; font-size: 13px; cursor: pointer; transition: background 0.15s, padding-left 0.15s; border-bottom: 1px solid rgba(255,255,255,0.05); }
-  .name-item:hover { background: rgba(255,255,255,0.1); padding-left: 26px; }
-  .name-item.active { background: rgba(255,255,255,0.2); padding-left: 26px; font-weight: bold; }
+  .name-item { padding: 7px 14px 7px 20px; font-size: 13px; cursor: pointer; transition: background 0.15s; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .name-item:hover { background: rgba(255,255,255,0.1); }
+  .name-item.active { background: rgba(255,255,255,0.2); font-weight: bold; }
   .name-item .coords { font-size: 10px; opacity: 0.5; margin-left: 6px; }
 
   /* Main area */
   .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-  .top-bar { padding: 12px 20px; background: #0f3460; display: flex; align-items: center; justify-content: space-between; }
-  .top-bar h1 { font-size: 20px; letter-spacing: 1px; }
-  .legend { display: flex; gap: 12px; align-items: center; }
-  .legend-item { display: flex; align-items: center; gap: 4px; font-size: 12px; }
-  .legend-swatch { width: 14px; height: 14px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.3); }
+  .top-bar { padding: 10px 16px; background: #0f3460; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+  .top-bar h1 { font-size: 18px; letter-spacing: 1px; white-space: nowrap; }
+  .legend { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 4px; font-size: 11px; }
+  .legend-swatch { width: 12px; height: 12px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.3); }
   .search-box { padding: 8px 16px; background: #16213e; }
-  .search-box input { width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #0f3460; background: #1a1a2e; color: #eee; font-size: 14px; outline: none; }
+  .search-box input { width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #0f3460; background: #1a1a2e; color: #eee; font-size: 16px; outline: none; -webkit-appearance: none; }
   .search-box input:focus { border-color: #e94560; }
 
   /* Grid */
-  .grid-container { flex: 1; overflow: auto; padding: 16px; }
+  .grid-container { flex: 1; overflow: auto; padding: 12px; -webkit-overflow-scrolling: touch; }
   .grid-table { border-collapse: collapse; margin: 0 auto; }
   .grid-table th, .grid-table td { border: 1px solid #2a2a4a; text-align: center; vertical-align: middle; }
-  .grid-table th { background: #0f3460; color: #fff; font-size: 13px; font-weight: bold; padding: 8px 12px; position: sticky; z-index: 1; }
+  .grid-table th { background: #0f3460; color: #fff; font-size: 13px; font-weight: bold; padding: 8px 10px; position: sticky; z-index: 1; }
   .grid-table thead th { top: 0; }
   .grid-table th.row-header { position: sticky; left: 0; z-index: 2; }
   .grid-table thead th.corner { z-index: 3; }
@@ -65,21 +65,88 @@
   .grid-table td.dimmed { opacity: 0.3; }
   @keyframes pulse { 0% { outline-width: 6px; } 100% { outline-width: 3px; } }
 
+  /* Mobile toggle button - hidden on desktop */
+  .view-toggle { display: none; }
+
   /* Scrollbar */
-  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { background: #1a1a2e; }
   ::-webkit-scrollbar-thumb { background: #0f3460; border-radius: 4px; }
+
+  /* ===== MOBILE STYLES ===== */
+  @media (max-width: 768px) {
+    body { flex-direction: column; }
+
+    /* Toggle buttons */
+    .view-toggle {
+      display: flex; background: #0f3460; border-bottom: 2px solid #e94560;
+    }
+    .view-toggle button {
+      flex: 1; padding: 12px; font-size: 15px; font-weight: bold; border: none;
+      cursor: pointer; transition: background 0.2s; color: #8899aa; background: #0f3460;
+      font-family: Arial, sans-serif; letter-spacing: 0.5px;
+    }
+    .view-toggle button.active { color: #fff; background: #1a2a4e; border-bottom: 3px solid #e94560; }
+
+    /* Sidebar becomes full-width panel */
+    .sidebar {
+      width: 100%; min-width: unset; border-right: none; flex: 1; overflow-y: auto;
+    }
+    .sidebar.hidden { display: none; }
+    .sidebar-header { display: none; } /* replaced by toggle */
+    .rank-label { position: sticky; top: 0; z-index: 1; padding: 10px 16px; font-size: 14px; }
+    .name-item { padding: 12px 16px 12px 22px; font-size: 15px; -webkit-tap-highlight-color: rgba(233,69,96,0.2); }
+    .name-item .coords { font-size: 11px; }
+    .search-box { padding: 10px 12px; position: sticky; top: 0; z-index: 3; }
+    .search-box input { padding: 10px 14px; font-size: 16px; }
+
+    /* Main becomes full-width panel */
+    .main { flex: 1; }
+    .main.hidden { display: none; }
+    .top-bar { padding: 8px 12px; }
+    .top-bar h1 { font-size: 16px; }
+    .legend { gap: 6px; }
+    .legend-item { font-size: 10px; }
+    .legend-swatch { width: 10px; height: 10px; }
+
+    /* Grid cells smaller on mobile */
+    .grid-container { padding: 8px; }
+    .grid-table td { width: 110px; min-width: 110px; height: 46px; padding: 3px 4px; }
+    .grid-table td .cell-name { font-size: 11px; }
+    .grid-table td .cell-coords { font-size: 9px; }
+    .grid-table th { font-size: 12px; padding: 6px 8px; }
+
+    /* Info bar shown when selecting from roster */
+    .mobile-info {
+      display: none; padding: 10px 16px; background: #e94560; text-align: center;
+      font-size: 14px; font-weight: bold; cursor: pointer;
+    }
+    .mobile-info.visible { display: block; }
+  }
+
+  /* Extra small phones */
+  @media (max-width: 400px) {
+    .grid-table td { width: 90px; min-width: 90px; height: 42px; }
+    .grid-table td .cell-name { font-size: 10px; }
+    .legend-item { font-size: 9px; }
+  }
 </style>
 </head>
 <body>
 
-<div class="sidebar">
+<!-- Mobile view toggle -->
+<div class="view-toggle" id="viewToggle">
+  <button id="btnRoster" class="active" onclick="showView('roster')">Roster</button>
+  <button id="btnMap" onclick="showView('map')">Map</button>
+</div>
+
+<div class="sidebar" id="sidebarPanel">
   <div class="sidebar-header">Commanders</div>
   <div class="search-box"><input type="text" id="searchInput" placeholder="Search names..."></div>
   <div id="nameList"></div>
 </div>
 
-<div class="main">
+<div class="main" id="mapPanel">
   <div class="top-bar">
     <h1>DuST Alliance Map</h1>
     <div class="legend">
@@ -91,6 +158,7 @@
       <div class="legend-item"><div class="legend-swatch" style="background:rgba(127,140,141,0.5)"></div>NPC</div>
     </div>
   </div>
+  <div class="mobile-info" id="mobileInfo"></div>
   <div class="grid-container" id="gridContainer">
     <table class="grid-table" id="gridTable"></table>
   </div>
@@ -169,6 +237,9 @@ const data = {
   ]
 };
 
+// Detect mobile
+const isMobile = () => window.innerWidth <= 768;
+
 // Build grid lookup and collect axes
 const grid = {};
 const xSet = new Set(), ySet = new Set();
@@ -224,7 +295,6 @@ yVals.forEach(y => {
         nameDiv.className = "cell-name";
         nameDiv.textContent = e.name;
         td.appendChild(nameDiv);
-        // Map name to cell for highlighting
         if (!cellIdMap[e.name]) cellIdMap[e.name] = [];
         cellIdMap[e.name].push(td);
       });
@@ -266,30 +336,62 @@ data.ranks.forEach(rank => {
   nameList.appendChild(group);
 });
 
+// Mobile view switching
+function showView(view) {
+  const sidebar = document.getElementById("sidebarPanel");
+  const main = document.getElementById("mapPanel");
+  const btnRoster = document.getElementById("btnRoster");
+  const btnMap = document.getElementById("btnMap");
+
+  if (view === "roster") {
+    sidebar.classList.remove("hidden");
+    main.classList.add("hidden");
+    btnRoster.classList.add("active");
+    btnMap.classList.remove("active");
+  } else {
+    sidebar.classList.add("hidden");
+    main.classList.remove("hidden");
+    btnRoster.classList.remove("active");
+    btnMap.classList.add("active");
+  }
+}
+
 // Highlight logic
 let activeName = null;
 function highlightPlayer(name) {
-  // Clear previous
   document.querySelectorAll(".name-item.active").forEach(el => el.classList.remove("active"));
   document.querySelectorAll(".grid-table td.highlight").forEach(el => el.classList.remove("highlight"));
   document.querySelectorAll(".grid-table td.dimmed").forEach(el => el.classList.remove("dimmed"));
+  document.getElementById("mobileInfo").classList.remove("visible");
 
   if (activeName === name) { activeName = null; return; }
   activeName = name;
 
-  // Highlight sidebar
   document.querySelectorAll(`.name-item[data-name="${CSS.escape(name)}"]`).forEach(el => el.classList.add("active"));
 
-  // Highlight grid cells
   const cells = cellIdMap[name];
   if (cells && cells.length) {
-    // Dim all occupied cells
     document.querySelectorAll(".grid-table td.occupied").forEach(el => el.classList.add("dimmed"));
     cells.forEach(td => {
       td.classList.remove("dimmed");
       td.classList.add("highlight");
-      td.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
     });
+
+    // On mobile: auto-switch to map and scroll to highlighted cell
+    if (isMobile()) {
+      showView("map");
+      setTimeout(() => {
+        cells[0].scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+      }, 100);
+      // Show info bar with tap-to-go-back
+      const info = document.getElementById("mobileInfo");
+      const coordText = cells[0].querySelector(".cell-coords");
+      info.textContent = `${name} ${coordText ? coordText.textContent : ""} — tap here for roster`;
+      info.classList.add("visible");
+      info.onclick = () => { showView("roster"); };
+    } else {
+      cells[0].scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+    }
   }
 }
 
@@ -307,6 +409,16 @@ document.getElementById("searchInput").addEventListener("input", function() {
   document.querySelectorAll(".name-item").forEach(item => {
     item.style.display = item.dataset.name.toLowerCase().includes(q) ? "" : "none";
   });
+});
+
+// Handle resize between mobile/desktop
+window.addEventListener("resize", () => {
+  const sidebar = document.getElementById("sidebarPanel");
+  const main = document.getElementById("mapPanel");
+  if (!isMobile()) {
+    sidebar.classList.remove("hidden");
+    main.classList.remove("hidden");
+  }
 });
 </script>
 </body>
