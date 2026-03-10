@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DuST Alliance Map</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; display: flex; height: 100vh; overflow: hidden; }
+
+  /* Sidebar */
+  .sidebar { width: 260px; min-width: 260px; background: #16213e; overflow-y: auto; border-right: 2px solid #0f3460; display: flex; flex-direction: column; }
+  .sidebar-header { padding: 16px; text-align: center; background: #0f3460; font-size: 18px; font-weight: bold; letter-spacing: 1px; position: sticky; top: 0; z-index: 2; }
+  .rank-group { margin-bottom: 2px; }
+  .rank-label { padding: 8px 14px; font-size: 13px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; position: sticky; top: 52px; z-index: 1; cursor: default; display: flex; justify-content: space-between; align-items: center; }
+  .rank-label .count { font-weight: normal; font-size: 11px; opacity: 0.7; }
+  .rank-r5 { background: #b8860b; color: #fff; }
+  .rank-r4 { background: #c0392b; color: #fff; }
+  .rank-r3 { background: #2980b9; color: #fff; }
+  .rank-r2 { background: #27ae60; color: #fff; }
+  .rank-r1 { background: #8e44ad; color: #fff; }
+  .rank-npc { background: #7f8c8d; color: #fff; }
+  .name-item { padding: 7px 14px 7px 20px; font-size: 13px; cursor: pointer; transition: background 0.15s, padding-left 0.15s; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .name-item:hover { background: rgba(255,255,255,0.1); padding-left: 26px; }
+  .name-item.active { background: rgba(255,255,255,0.2); padding-left: 26px; font-weight: bold; }
+  .name-item .coords { font-size: 10px; opacity: 0.5; margin-left: 6px; }
+
+  /* Main area */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .top-bar { padding: 12px 20px; background: #0f3460; display: flex; align-items: center; justify-content: space-between; }
+  .top-bar h1 { font-size: 20px; letter-spacing: 1px; }
+  .legend { display: flex; gap: 12px; align-items: center; }
+  .legend-item { display: flex; align-items: center; gap: 4px; font-size: 12px; }
+  .legend-swatch { width: 14px; height: 14px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.3); }
+  .search-box { padding: 8px 16px; background: #16213e; }
+  .search-box input { width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #0f3460; background: #1a1a2e; color: #eee; font-size: 14px; outline: none; }
+  .search-box input:focus { border-color: #e94560; }
+
+  /* Grid */
+  .grid-container { flex: 1; overflow: auto; padding: 16px; }
+  .grid-table { border-collapse: collapse; margin: 0 auto; }
+  .grid-table th, .grid-table td { border: 1px solid #2a2a4a; text-align: center; vertical-align: middle; }
+  .grid-table th { background: #0f3460; color: #fff; font-size: 13px; font-weight: bold; padding: 8px 12px; position: sticky; z-index: 1; }
+  .grid-table thead th { top: 0; }
+  .grid-table th.row-header { position: sticky; left: 0; z-index: 2; }
+  .grid-table thead th.corner { z-index: 3; }
+  .grid-table td { width: 140px; min-width: 140px; height: 52px; padding: 4px 6px; font-size: 12px; background: #1e1e3a; transition: all 0.25s; cursor: default; }
+  .grid-table td.occupied { cursor: pointer; }
+  .grid-table td .cell-name { font-weight: bold; font-size: 12px; line-height: 1.3; }
+  .grid-table td .cell-coords { font-size: 10px; opacity: 0.5; }
+  .grid-table td.empty { background: #16162e; }
+
+  /* Rank cell colors */
+  .cell-R5 { background: rgba(184,134,11,0.25) !important; border-color: rgba(184,134,11,0.5) !important; }
+  .cell-R4 { background: rgba(192,57,43,0.25) !important; border-color: rgba(192,57,43,0.5) !important; }
+  .cell-R3 { background: rgba(41,128,185,0.25) !important; border-color: rgba(41,128,185,0.5) !important; }
+  .cell-R2 { background: rgba(39,174,96,0.25) !important; border-color: rgba(39,174,96,0.5) !important; }
+  .cell-R1 { background: rgba(142,68,173,0.25) !important; border-color: rgba(142,68,173,0.5) !important; }
+  .cell-NPC { background: rgba(127,140,141,0.3) !important; border-color: rgba(127,140,141,0.5) !important; }
+  .cell-DNT { background: rgba(231,76,60,0.2) !important; border-color: rgba(231,76,60,0.5) !important; }
+
+  /* Highlight */
+  .grid-table td.highlight { outline: 3px solid #e94560; outline-offset: -2px; animation: pulse 0.6s ease-out; z-index: 1; position: relative; transform: scale(1.05); box-shadow: 0 0 20px rgba(233,69,96,0.5); }
+  .grid-table td.highlight .cell-name { color: #fff; font-size: 13px; }
+  .grid-table td.dimmed { opacity: 0.3; }
+  @keyframes pulse { 0% { outline-width: 6px; } 100% { outline-width: 3px; } }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: #1a1a2e; }
+  ::-webkit-scrollbar-thumb { background: #0f3460; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-header">Commanders</div>
+  <div class="search-box"><input type="text" id="searchInput" placeholder="Search names..."></div>
+  <div id="nameList"></div>
+</div>
+
+<div class="main">
+  <div class="top-bar">
+    <h1>DuST Alliance Map</h1>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-swatch" style="background:rgba(184,134,11,0.5)"></div>R5</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgba(192,57,43,0.5)"></div>R4</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgba(41,128,185,0.5)"></div>R3</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgba(39,174,96,0.5)"></div>R2</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgba(142,68,173,0.5)"></div>R1</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgba(127,140,141,0.5)"></div>NPC</div>
+    </div>
+  </div>
+  <div class="grid-container" id="gridContainer">
+    <table class="grid-table" id="gridTable"></table>
+  </div>
+</div>
+
+<script>
+const data = {
+  ranks: [
+    { id: "R5", label: "R5 Rank", players: [
+      { name: "BlackViper1", x: 538, y: 426 }
+    ]},
+    { id: "R4", label: "R4 Rank", players: [
+      { name: "Beakerbomb2", x: 535, y: 432 }, { name: "zalditxo", x: 538, y: 423 },
+      { name: "Abul Odz", x: 535, y: 429 }, { name: "CyrusX2", x: 538, y: 429 },
+      { name: "Eradeledare", x: 535, y: 423 }, { name: "GlitteringNightmare", x: 532, y: 429 },
+      { name: "Im DaGoat", x: 532, y: 423 }, { name: "Huckleberry134", x: 532, y: 426 }
+    ]},
+    { id: "R3", label: "R3 Rank", players: [
+      { name: "IceBrokenQueen", x: 538, y: 417 }, { name: "DosD", x: 538, y: 420 },
+      { name: "TheChadiest", x: 529, y: 438 }, { name: "buffyholiday", x: 529, y: 435 },
+      { name: "Nacnacn", x: 532, y: 420 }, { name: "Atroup", x: 544, y: 429 },
+      { name: "BadDad77777", x: 535, y: 420 }, { name: "BingBang187", x: 541, y: 423 },
+      { name: "Folie A Un", x: 541, y: 420 }, { name: "dalejr136", x: 535, y: 438 },
+      { name: "Dee131314", x: null, y: null },
+      { name: "Squirrel 00", x: 529, y: 420 }, { name: "Phillyant", x: 544, y: 426 },
+      { name: "Kabuki Suns Sun", x: 529, y: 426 }, { name: "Etheraniel", x: 532, y: 438 },
+      { name: "ilAndros", x: 538, y: 435 }, { name: "Zombiekiller8913", x: 541, y: 429 },
+      { name: "Szathkey", x: 544, y: 432 }, { name: "Fortis I", x: 544, y: 438 },
+      { name: "Happicat", x: 544, y: 423 }, { name: "MWG2", x: null, y: null },
+      { name: "Joronoa", x: 541, y: 432 }, { name: "DeFireballz", x: 544, y: 435 },
+      { name: "Rizzle Vavizzle 420", x: 529, y: 432 }, { name: "jessikao", x: 544, y: 420 },
+      { name: "JayRodz9", x: 538, y: 432 }, { name: "Ohliveuh", x: 526, y: 414 },
+      { name: "The Big Juice", x: 532, y: 432 }, { name: "terror355", x: 541, y: 435 },
+      { name: "RM PRIME", x: 541, y: 417 }, { name: "Dengar313", x: 541, y: 438 },
+      { name: "Mark the LionHearted", x: 535, y: 435 }
+    ]},
+    { id: "R2", label: "R2 Rank", players: [
+      { name: "Bless000", x: 541, y: 441 }, { name: "Dolores85G", x: 544, y: 441 },
+      { name: "French beast", x: 535, y: 444 }, { name: "MSGT Jerrycurljuice", x: 544, y: 417 },
+      { name: "TheNastyLugi", x: 532, y: 417 }, { name: "Everdean", x: 529, y: 417 },
+      { name: "Last of Us 78", x: 538, y: 444 }, { name: "Scotty BB", x: 544, y: 414 },
+      { name: "DON LAST WAR", x: 526, y: 426 }, { name: "JoshxDrako", x: 529, y: 414 },
+      { name: "CVcamper", x: 544, y: 444 }, { name: "São Caetano o", x: 538, y: 441 },
+      { name: "Reshion", x: 532, y: 444 }, { name: "Mufassa209", x: 532, y: 435 },
+      { name: "RS725", x: 529, y: 441 }, { name: "THORILBEN92", x: 526, y: 432 },
+      { name: "RedlineRoot48", x: 532, y: 441 }, { name: "Leoricatto", x: 535, y: 417 },
+      { name: "Mihawk191", x: 535, y: 441 }, { name: "Charmac", x: 526, y: 429 },
+      { name: "manu876", x: 526, y: 423 }, { name: "BigWrenchin", x: 538, y: 414 },
+      { name: "sprtan bill", x: 541, y: 414 }, { name: "Ice Cold Jay D", x: 535, y: 414 },
+      { name: "DaSurveyor", x: 541, y: 444 }
+    ]},
+    { id: "R1", label: "R1 Rank", players: [
+      { name: "Mateod131", x: 523, y: 432 }, { name: "Funk009", x: 529, y: 429 },
+      { name: "Shawayne", x: 523, y: 441 }, { name: "Obetwo", x: 523, y: 423 },
+      { name: "ThiPek99", x: null, y: null },
+      { name: "CMDCrocodilo", x: 547, y: 429 }, { name: "Bigdude416", x: 523, y: 426 },
+      { name: "Eagle One 13", x: 523, y: 429 }, { name: "Inbluntswetrust", x: 523, y: 438 },
+      { name: "Cmd biscut", x: 547, y: 441 }, { name: "Whatthespark", x: 547, y: 444 },
+      { name: "Luciaathompsonn", x: 547, y: 420 }, { name: "grgwicked", x: null, y: null },
+      { name: "CeaJayAre", x: 547, y: 438 }, { name: "jedilorian", x: 526, y: 435 },
+      { name: "FaceInTheCrowd", x: 529, y: 423 }, { name: "Spkb", x: 532, y: 414 },
+      { name: "son of jorell", x: 526, y: 441 }, { name: "SALAHUDINE", x: 526, y: 438 },
+      { name: "HoFFmaN", x: 523, y: 417 }, { name: "Ohhitisjustme", x: 526, y: 417 },
+      { name: "AliceXO", x: 523, y: 435 }, { name: "Perc1287", x: 523, y: 420 },
+      { name: "Biggeekin", x: 523, y: 444 }, { name: "BoredAtWrk", x: 523, y: 414 },
+      { name: "Chuck Chuckles", x: 526, y: 444 }, { name: "Gabizbueno", x: 547, y: 435 },
+      { name: "Dee Rich25", x: 526, y: 420 }, { name: "Garfdagod", x: 547, y: 432 },
+      { name: "The church lady", x: 529, y: 444 }, { name: "TheGasStation", x: 547, y: 426 },
+      { name: "Zoogsm", x: 547, y: 423 }, { name: "HerGrimm", x: null, y: null },
+      { name: "New Member", x: 541, y: 426 }
+    ]},
+    { id: "NPC", label: "Special", players: [
+      { name: "Marshall's Guard (NPC)", x: 535, y: 426, cssClass: "NPC" },
+      { name: "DO NOT TAKE", x: 538, y: 438, cssClass: "DNT" }
+    ]}
+  ]
+};
+
+// Build grid lookup and collect axes
+const grid = {};
+const xSet = new Set(), ySet = new Set();
+const cellIdMap = {};
+
+data.ranks.forEach(rank => {
+  rank.players.forEach(p => {
+    if (p.x == null) return;
+    const key = p.x + "," + p.y;
+    if (!grid[key]) grid[key] = [];
+    const cls = p.cssClass || rank.id;
+    grid[key].push({ name: p.name, rank: cls });
+    xSet.add(p.x);
+    ySet.add(p.y);
+  });
+});
+
+const xVals = [...xSet].sort((a, b) => a - b);
+const yVals = [...ySet].sort((a, b) => b - a);
+
+// Build table
+const table = document.getElementById("gridTable");
+const thead = document.createElement("thead");
+const hRow = document.createElement("tr");
+const corner = document.createElement("th");
+corner.textContent = "Y \\ X";
+corner.className = "corner";
+hRow.appendChild(corner);
+xVals.forEach(x => {
+  const th = document.createElement("th");
+  th.textContent = x;
+  hRow.appendChild(th);
+});
+thead.appendChild(hRow);
+table.appendChild(thead);
+
+const tbody = document.createElement("tbody");
+yVals.forEach(y => {
+  const tr = document.createElement("tr");
+  const th = document.createElement("th");
+  th.textContent = y;
+  th.className = "row-header";
+  tr.appendChild(th);
+  xVals.forEach(x => {
+    const td = document.createElement("td");
+    const key = x + "," + y;
+    const entries = grid[key];
+    if (entries) {
+      td.classList.add("occupied");
+      entries.forEach(e => {
+        td.classList.add("cell-" + e.rank);
+        const nameDiv = document.createElement("div");
+        nameDiv.className = "cell-name";
+        nameDiv.textContent = e.name;
+        td.appendChild(nameDiv);
+        // Map name to cell for highlighting
+        if (!cellIdMap[e.name]) cellIdMap[e.name] = [];
+        cellIdMap[e.name].push(td);
+      });
+      const coordDiv = document.createElement("div");
+      coordDiv.className = "cell-coords";
+      coordDiv.textContent = `(${x}, ${y})`;
+      td.appendChild(coordDiv);
+    } else {
+      td.classList.add("empty");
+    }
+    tr.appendChild(td);
+  });
+  tbody.appendChild(tr);
+});
+table.appendChild(tbody);
+
+// Build sidebar
+const nameList = document.getElementById("nameList");
+data.ranks.forEach(rank => {
+  const group = document.createElement("div");
+  group.className = "rank-group";
+  const label = document.createElement("div");
+  label.className = "rank-label rank-" + rank.id.toLowerCase();
+  label.innerHTML = `${rank.label} <span class="count">${rank.players.length}</span>`;
+  group.appendChild(label);
+  rank.players.forEach(p => {
+    const item = document.createElement("div");
+    item.className = "name-item";
+    item.dataset.name = p.name;
+    item.dataset.x = p.x || "";
+    item.dataset.y = p.y || "";
+    let html = p.name;
+    if (p.x != null) html += `<span class="coords">(${p.x}, ${p.y})</span>`;
+    else html += `<span class="coords">(no coords)</span>`;
+    item.innerHTML = html;
+    item.addEventListener("click", () => highlightPlayer(p.name));
+    group.appendChild(item);
+  });
+  nameList.appendChild(group);
+});
+
+// Highlight logic
+let activeName = null;
+function highlightPlayer(name) {
+  // Clear previous
+  document.querySelectorAll(".name-item.active").forEach(el => el.classList.remove("active"));
+  document.querySelectorAll(".grid-table td.highlight").forEach(el => el.classList.remove("highlight"));
+  document.querySelectorAll(".grid-table td.dimmed").forEach(el => el.classList.remove("dimmed"));
+
+  if (activeName === name) { activeName = null; return; }
+  activeName = name;
+
+  // Highlight sidebar
+  document.querySelectorAll(`.name-item[data-name="${CSS.escape(name)}"]`).forEach(el => el.classList.add("active"));
+
+  // Highlight grid cells
+  const cells = cellIdMap[name];
+  if (cells && cells.length) {
+    // Dim all occupied cells
+    document.querySelectorAll(".grid-table td.occupied").forEach(el => el.classList.add("dimmed"));
+    cells.forEach(td => {
+      td.classList.remove("dimmed");
+      td.classList.add("highlight");
+      td.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+    });
+  }
+}
+
+// Cell click to highlight
+document.querySelectorAll(".grid-table td.occupied").forEach(td => {
+  td.addEventListener("click", () => {
+    const nameEl = td.querySelector(".cell-name");
+    if (nameEl) highlightPlayer(nameEl.textContent);
+  });
+});
+
+// Search
+document.getElementById("searchInput").addEventListener("input", function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll(".name-item").forEach(item => {
+    item.style.display = item.dataset.name.toLowerCase().includes(q) ? "" : "none";
+  });
+});
+</script>
+</body>
+</html>
